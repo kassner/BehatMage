@@ -1,5 +1,5 @@
 {
-    "name": "magetest/magento-behat-extension",
+    "name": "kassner/magento-behat",
     "description": "Magento Behat extension",
     "type": "library",
     "keywords": ["behat","bdd","magento"],

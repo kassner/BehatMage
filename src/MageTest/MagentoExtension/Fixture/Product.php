@@ -35,15 +35,33 @@ class Product implements FixtureInterface
         $modelFactory = $this->modelFactory;
         $this->model = $modelFactory();
 
+        if (empty($attributes['sku'])) {
+            throw new \RuntimeException("Cannot generate a product fixture when no 'sku' attribute is provided");
+        }
+
+        $attributes = $this->sanitizeAttributes($attributes);
+
         $id = $this->model->getIdBySku($attributes['sku']);
         if ($id) {
             $this->model->load($id);
         }
 
+        if (!empty($attributes['type_id'])) {
+            $this->model->setTypeId($attributes['type_id']);
+        }
+
+        if (!empty($attributes['attribute_set_id'])) {
+            $this->model->setAttributeSetId($attributes['attribute_set_id']);
+        }
+
         $this->validateAttributes(array_keys($attributes));
+        $attributes = $this->mergeAttributes($attributes);
 
         \Mage::app()->setCurrentStore(\Mage_Core_Model_App::ADMIN_STORE_ID);
-        $this->model->setData($this->mergeAttributes($attributes))->save();
+        foreach ($attributes as $key => $value) {
+            $this->model->setData($key, $value);
+        }
+        $this->model->save();
         \Mage::app()->setCurrentStore(\Mage_Core_Model_App::DISTRO_STORE_ID);
 
         return $this->model->getId();
@@ -61,6 +79,16 @@ class Product implements FixtureInterface
                 throw new \RuntimeException("$attribute is not yet defined as an attribute of Product");
             }
         }
+    }
+
+    protected function sanitizeAttributes($attributes)
+    {
+        foreach ($attributes as $key => $value) {
+            if (!$this->attributeExists($key) && empty($value)) {
+                unset($attributes[$key]);
+            }
+        }
+        return $attributes;
     }
 
     function attributeExists($attribute)
